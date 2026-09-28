@@ -1,7 +1,7 @@
 export function DiffView({ diff }: { diff: string }) {
   const lines = diff.replace(/\n$/, "").split("\n");
   return (
-    <pre className="overflow-x-auto font-mono text-[12.5px] leading-6">
+    <pre className="w-full min-w-0 overflow-x-auto font-mono text-[12.5px] leading-6">
       {lines.map((line, index) => {
         let className = "px-4 text-[#6f6a60]";
         if (line.startsWith("@@")) className = "px-4 text-[#7a6840]";

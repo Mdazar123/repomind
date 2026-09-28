@@ -26,7 +26,7 @@ const LABELS: Record<string, string> = {
 const memos = (report.log as Memo[]).filter((memo) => memo.agent !== "publish");
 
 export function CaseDesk() {
-  const [shown, setShown] = useState(1);
+  const [shown, setShown] = useState(memos.length);
   const done = shown >= memos.length;
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export function CaseDesk() {
   const root = report.root_cause;
 
   return (
-    <article className="paper mx-auto w-full max-w-5xl rounded-[2px] px-5 py-8 sm:px-10 sm:py-12">
+    <article className="paper mx-auto w-full max-w-5xl overflow-hidden rounded-[2px] px-5 py-8 sm:px-10 sm:py-12">
       <div className="flex flex-wrap items-start justify-between gap-6 border-b border-[#ddd6c8] pb-6">
         <div>
           <p className="font-mono text-[11px] tracking-[0.22em] text-[#8a8478] uppercase">
@@ -108,8 +108,8 @@ export function CaseDesk() {
       </ol>
 
       {done && root && (
-        <section className="mt-10 grid gap-8 border-t border-[#ddd6c8] pt-8 lg:grid-cols-[0.9fr_1.1fr]">
-          <div>
+        <section className="mt-10 grid gap-8 border-t border-[#ddd6c8] pt-8 lg:grid-cols-2">
+          <div className="min-w-0">
             <p className="font-mono text-[11px] tracking-[0.18em] text-[#8a8478] uppercase">
               Root cause
             </p>
@@ -130,12 +130,12 @@ export function CaseDesk() {
               </p>
             )}
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="font-mono text-[11px] tracking-[0.18em] text-[#8a8478] uppercase">
               Sandbox edit
             </p>
             <p className="mt-2 text-[15px] text-[#3c382f]">{report.patch.explanation}</p>
-            <div className="mt-4 border border-[#e6e0d4] bg-white/70">
+            <div className="mt-4 max-w-full overflow-x-auto border border-[#e6e0d4] bg-white/70">
               <DiffView diff={report.patch.diff} />
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -144,7 +144,7 @@ export function CaseDesk() {
                   Before
                 </p>
                 <p className="mt-2 text-2xl text-[#1c1b16]">Failed</p>
-                <p className="mt-2 font-mono text-xs leading-5 text-[#5e594e]">
+                <p className="mt-2 overflow-x-auto font-mono text-xs leading-5 break-words whitespace-pre-wrap text-[#5e594e]">
                   {proof.baseline.output
                     .split("\n")
                     .filter((line) => line.includes("assert") || line.trim().startsWith("E "))
