@@ -2,23 +2,21 @@
 
 RepoMind investigates a Python repository **on your machine**. A security agent and a performance agent file only what they can point at. A critic rejects a theory that does not explain the symptom. A patch counts only when a targeted test fails before the edit and passes after it.
 
-The repository is not uploaded. This site shows one finished case from the bundled Paystream service.
+The repository is not uploaded. The public site shows one finished case from the bundled Paystream service: https://mdazar123.github.io/repomind/
 
 ## Install
 
 The name `repomind` on PyPI already belongs to a different project. This package is `repomind-local`. The command is still `repomind`.
 
+```bash
+pip install "git+https://github.com/Mdazar123/repomind.git"
+repomind demo
+```
+
 From a checkout:
 
 ```bash
 pip install -e .
-repomind demo
-```
-
-After the package is published:
-
-```bash
-pip install repomind-local
 repomind demo
 ```
 

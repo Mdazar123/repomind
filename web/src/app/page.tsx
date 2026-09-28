@@ -89,20 +89,18 @@ export default function HomePage() {
               Your repository stays on your machine.
             </h2>
             <p className="mt-4 leading-relaxed text-[#c9c4b6]">
-              From a checkout, the command is{" "}
+              Install it from GitHub. The command is{" "}
               <code className="text-[#f6f1e6]">repomind</code>. The PyPI name{" "}
               <code className="text-[#f6f1e6]">repomind</code> already belongs to another
-              project, so this package publishes as{" "}
+              project, so this package is{" "}
               <code className="text-[#f6f1e6]">repomind-local</code>.
             </p>
           </div>
           <div className="paper p-6 font-mono text-[13px] leading-7 text-[#1c1b16]">
-            <p className="text-[#8a8478]"># from a checkout of this repo</p>
-            <p>pip install -e .</p>
+            <p>pip install &quot;git+https://github.com/Mdazar123/repomind.git&quot;</p>
             <p>repomind demo</p>
-            <p className="mt-4 text-[#8a8478]"># after it is published</p>
-            <p>pip install repomind-local</p>
-            <p>repomind explain &quot;Why are fresh tokens rejected?&quot; .</p>
+            <p className="mt-4 text-[#8a8478]"># then point it at a Python project</p>
+            <p>repomind scan .</p>
           </div>
         </section>
 
