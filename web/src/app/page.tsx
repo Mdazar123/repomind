@@ -4,11 +4,13 @@ import { SiteHeader } from "@/components/site-header";
 import report from "@/data/demo-report.json";
 
 const steps = [
-  ["Recon", "Index files, routes, and tests. Notes are a lead, not proof."],
-  ["Security", "File auth defects that point at a line."],
-  ["Performance", "File loops that ignore a batch API."],
-  ["Critic", "Reject a theory that cannot cause the symptom."],
-  ["Proof", "Keep the patch only if a failing test starts passing."],
+  ["Recon", "Indexes the project. A question limits it to functions whose names match."],
+  ["Security", "Files secrets, unsafe shell calls, weak JWT checks, and FastAPI mistakes."],
+  ["Performance", "Files blocking async calls, queries in loops, and missing timeouts."],
+  ["Hypothesis", "Picks one cause. The first pass may follow the on-call notes."],
+  ["Critic", "Rejects a cause that does not mention the question."],
+  ["Fix", "Writes a patch only for a pattern it can change safely."],
+  ["Proof", "Runs the related test before and after. Proven means red, then green."],
 ];
 
 export default function HomePage() {
@@ -46,11 +48,14 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-          <div className="paper p-6">
+          <Link href="/case" className="paper relative block p-6 transition hover:-translate-y-0.5">
+            <span className="stamp stamp-green absolute top-5 right-5 px-2 py-1 font-mono text-[10px]">
+              Proven
+            </span>
             <p className="font-mono text-[11px] tracking-[0.18em] text-[#8a8478] uppercase">
               {report.id} · {report.repo_name}
             </p>
-            <p className="mt-3 font-heading text-3xl leading-tight text-[#1c1b16]">
+            <p className="mt-3 max-w-[16rem] font-heading text-3xl leading-tight text-[#1c1b16]">
               Fresh tokens were not expired. The clock was.
             </p>
             <dl className="mt-6 space-y-3 text-sm text-[#3c382f]">
@@ -67,10 +72,10 @@ export default function HomePage() {
                 <dd className="text-[#1e6b45]">failed, then passed</dd>
               </div>
             </dl>
-          </div>
+          </Link>
         </section>
 
-        <section className="grid gap-px bg-white/10 py-px sm:grid-cols-2 lg:grid-cols-5">
+        <section className="grid gap-px bg-white/10 py-px sm:grid-cols-2 lg:grid-cols-4">
           {steps.map(([title, body], index) => (
             <div key={title} className="bg-[#141613] px-4 py-6">
               <p className="font-mono text-[11px] text-[#e2f36b]">0{index + 1}</p>
@@ -89,18 +94,19 @@ export default function HomePage() {
               Your repository stays on your machine.
             </h2>
             <p className="mt-4 leading-relaxed text-[#c9c4b6]">
-              Install it from GitHub. The command is{" "}
-              <code className="text-[#f6f1e6]">repomind</code>. The PyPI name{" "}
-              <code className="text-[#f6f1e6]">repomind</code> already belongs to another
-              project, so this package is{" "}
-              <code className="text-[#f6f1e6]">repomind-local</code>.
+              The package name is{" "}
+              <code className="text-[#f6f1e6]">repomind-local</code>. The command is{" "}
+              <code className="text-[#f6f1e6]">repomind</code>.{" "}
+              <code className="text-[#f6f1e6]">pip install repomind</code> is a different
+              project.
             </p>
           </div>
-          <div className="paper p-6 font-mono text-[13px] leading-7 text-[#1c1b16]">
-            <p>pip install &quot;git+https://github.com/Mdazar123/repomind.git&quot;</p>
+          <div className="paper p-6 font-mono text-[13px] leading-7 break-all text-[#1c1b16] sm:break-normal">
+            <p>pip install repomind-local</p>
             <p>repomind demo</p>
-            <p className="mt-4 text-[#8a8478]"># then point it at a Python project</p>
+            <p className="mt-4 text-[#8a8478]"># in another Python project</p>
             <p>repomind scan .</p>
+            <p>repomind explain &quot;Why does login fail?&quot; .</p>
           </div>
         </section>
 
@@ -113,17 +119,17 @@ export default function HomePage() {
             </p>
           </div>
           <div>
-            <h3 className="font-heading text-2xl">Evidence, then a model</h3>
+            <h3 className="font-heading text-2xl">Evidence, then a verdict</h3>
             <p className="mt-2 text-sm leading-relaxed text-[#c9c4b6]">
-              Findings come from the AST and the tests. A local Qwen coder model is
-              optional and only rewrites the case note. There is no paid API key.
+              Findings come from the code and the tests. A line is the cause only when
+              it matches the question. There is no paid API key.
             </p>
           </div>
           <div>
             <h3 className="font-heading text-2xl">Built by Md Azhar</h3>
             <p className="mt-2 text-sm leading-relaxed text-[#c9c4b6]">
               Python, LangGraph, and a Next.js case file.{" "}
-              <a className="text-[#e2f36b] underline-offset-4 hover:underline" href="https://github.com/Mdazar123">
+              <a className="text-[#e2f36b] underline-offset-4 hover:underline" href="https://github.com/Mdazar123/repomind">
                 GitHub
               </a>
               {" · "}

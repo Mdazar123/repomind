@@ -9,7 +9,7 @@ The repository is not uploaded. The public site shows one finished case from the
 The name `repomind` on PyPI already belongs to a different project. This package is `repomind-local`. The command is still `repomind`.
 
 ```bash
-pip install "git+https://github.com/Mdazar123/repomind.git"
+pip install repomind-local
 repomind demo
 ```
 

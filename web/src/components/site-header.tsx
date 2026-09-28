@@ -9,18 +9,23 @@ export function SiteHeader({ caseId }: { caseId?: string }) {
         </span>
         <span className="text-[15px] tracking-tight">RepoMind</span>
       </Link>
-      <nav className="flex items-center gap-5 text-[13px] text-[#c9c4b6]">
-        {caseId ? (
-          <Link href="/case" className="hidden font-mono text-[#e2f36b] sm:inline">
-            {caseId}
-          </Link>
-        ) : (
-          <Link href="/case" className="hover:text-white">
-            Paystream case
-          </Link>
-        )}
+      <nav className="flex items-center gap-4 text-[13px] text-[#c9c4b6] sm:gap-5">
+        <Link href="/case" className="hover:text-white">
+          {caseId ? `Case ${caseId}` : "Case"}
+        </Link>
+        <Link href="/#install" className="hover:text-white">
+          Install
+        </Link>
         <a
-          href="https://github.com/Mdazar123"
+          href="https://pypi.org/project/repomind-local/"
+          className="hover:text-white"
+          target="_blank"
+          rel="noreferrer"
+        >
+          PyPI
+        </a>
+        <a
+          href="https://github.com/Mdazar123/repomind"
           className="hover:text-white"
           target="_blank"
           rel="noreferrer"
