@@ -29,15 +29,32 @@ _STOP = {
     "not",
     "into",
     "about",
+    "fail",
+    "fails",
+    "failed",
+    "failure",
+    "error",
+    "errors",
+    "bug",
+    "bugs",
+    "broken",
+    "issue",
+    "issues",
+    "work",
+    "working",
 }
 
 
-def retrieve(repo: Path, question: str, limit: int = 5) -> list[dict]:
-    words = [
+def question_terms(question: str) -> list[str]:
+    return [
         word
         for word in re.findall(r"[a-zA-Z_][a-zA-Z0-9_]{2,}", question.lower())
         if word not in _STOP
     ]
+
+
+def retrieve(repo: Path, question: str, limit: int = 5) -> list[dict]:
+    words = question_terms(question)
     if not words:
         return []
     scored: list[tuple[int, dict]] = []
@@ -54,9 +71,15 @@ def retrieve(repo: Path, question: str, limit: int = 5) -> list[dict]:
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
             segment = ast.get_source_segment(source, node) or ""
-            haystack = f"{node.name} {segment}".lower()
-            score = sum(3 if word in node.name.lower() else 1 for word in words if word in haystack)
-            if score <= 0:
+            name = node.name.lower()
+            score = 0
+            for word in words:
+                pattern = rf"\b{re.escape(word)}\b"
+                if re.search(pattern, name):
+                    score += 5
+                elif re.search(pattern, segment.lower()):
+                    score += 1
+            if score < 5:
                 continue
             start = max(1, node.lineno)
             end = min(len(lines), (node.end_lineno or node.lineno))

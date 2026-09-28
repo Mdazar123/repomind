@@ -16,7 +16,12 @@ from repomind.analysis.fixes import propose_edit
 from repomind.analysis.index import index_repo
 from repomind.analysis.proof import prove, select_tests
 from repomind.analysis.search import retrieve
-from repomind.analysis.symptoms import choose_hypothesis, primary_symptom, symptom_conflict
+from repomind.analysis.symptoms import (
+    choose_hypothesis,
+    finding_misses_question,
+    primary_symptom,
+    symptom_conflict,
+)
 
 
 class InvestigationState(TypedDict):
@@ -257,7 +262,9 @@ def critic(state: InvestigationState) -> dict:
     else:
         conflict = None
         if state.get("problem"):
-            conflict = symptom_conflict(state["problem"], hypothesis["category"])
+            conflict = finding_misses_question(state["problem"], hypothesis) or symptom_conflict(
+                state["problem"], hypothesis["category"]
+            )
         if conflict:
             critique = {
                 "accepted": False,
@@ -479,6 +486,11 @@ def _summary(state: InvestigationState, status: str, root: dict | None) -> str:
         return (
             f"{challenge}{root['title']} in {root['file']}:{root['line']}. "
             f"{tests} failed before the edit and passed after it."
+        )
+    if state.get("problem") and not (state.get("critiques") and state["critiques"][-1]["accepted"]):
+        return (
+            "No filed line mentions the subject of the question. "
+            "RepoMind did not choose a cause."
         )
     if root:
         return f"{root['title']} in {root['file']}:{root['line']}. {root['detail']}"

@@ -89,6 +89,22 @@ def test_demo_bug_is_proved_by_its_own_tests():
     assert all("test_investigation" not in item for item in chosen)
 
 
+def test_login_question_is_not_blamed_on_an_unrelated_exception(tmp_path: Path):
+    _write(
+        tmp_path,
+        "model.py",
+        "def ready():\n"
+        "    try:\n"
+        "        import llama_cpp\n"
+        "    except Exception:\n"
+        "        return False\n"
+        "    return True\n",
+    )
+    report = investigate(tmp_path, "Why does login fail?", use_notes=True)
+    assert report["root_cause"] is None
+    assert all("login" not in item["title"].lower() or "login" in item["file"] for item in report["findings"])
+
+
 def test_timeout_patch_is_proven(tmp_path: Path):
     _write(tmp_path, "api.py", "import requests\n\ndef fetch(url):\n    return requests.get(url)\n")
     _write(

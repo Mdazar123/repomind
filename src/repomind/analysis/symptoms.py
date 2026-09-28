@@ -79,6 +79,24 @@ def choose_hypothesis(
     return max(pool, key=score)
 
 
+def finding_misses_question(problem: str, finding: dict) -> str | None:
+    """Reject a line that does not mention what the question is about."""
+    from repomind.analysis.search import question_terms
+    import re
+
+    terms = question_terms(problem)
+    if not terms:
+        return None
+    blob = " ".join(
+        str(finding.get(key) or "")
+        for key in ("title", "detail", "file", "function", "evidence")
+    ).lower()
+    if any(re.search(rf"\b{re.escape(term)}\b", blob) for term in terms):
+        return None
+    shown = ", ".join(terms[:4])
+    return f"The question is about {shown}. This line does not mention that, so it cannot be the cause."
+
+
 def symptom_conflict(problem: str, category: str) -> str | None:
     symptom = primary_symptom(problem)
     if symptom == "general" or symptom == category:
