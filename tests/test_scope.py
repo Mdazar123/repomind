@@ -2,7 +2,8 @@ from pathlib import Path
 
 from repomind.analysis.detectors import detect
 from repomind.analysis.proof import select_tests
-from repomind.workflow import investigate
+from repomind.cases import TOKEN_CASE
+from repomind.workflow import bundled_paystream, investigate
 
 
 def _write(root: Path, name: str, source: str) -> None:
@@ -103,6 +104,18 @@ def test_login_question_is_not_blamed_on_an_unrelated_exception(tmp_path: Path):
     report = investigate(tmp_path, "Why does login fail?", use_notes=True)
     assert report["root_cause"] is None
     assert all("login" not in item["title"].lower() or "login" in item["file"] for item in report["findings"])
+
+
+def test_local_model_writes_the_note_and_does_not_change_the_cause(monkeypatch):
+    monkeypatch.setattr(
+        "repomind.model.rewrite",
+        lambda summary, evidence: "The clock unit was wrong, and the token test proved it.",
+    )
+    report = investigate(bundled_paystream(), TOKEN_CASE, use_notes=True)
+    assert report["status"] == "proven"
+    assert report["model_note"] == "The clock unit was wrong, and the token test proved it."
+    assert "tokens.py" in report["summary"]
+    assert report["root_cause"]["detector"] == "expiry_unit_mismatch"
 
 
 def test_timeout_patch_is_proven(tmp_path: Path):

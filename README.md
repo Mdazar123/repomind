@@ -32,6 +32,13 @@ repomind fix 1
 
 `fix` prints the diff and asks before it writes. Pass `--yes` to apply it in a script.
 
+If a local Qwen2.5-Coder model is installed, it rewrites the case note after the critic accepts a cause. It does not choose the cause or the patch.
+
+```bash
+pip install "repomind-local[model]"
+repomind model download --size 1.5b
+```
+
 ## Check a project of your own
 
 ```bash

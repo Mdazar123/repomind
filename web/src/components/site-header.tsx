@@ -26,11 +26,19 @@ export function SiteHeader({ caseId }: { caseId?: string }) {
         </a>
         <a
           href="https://github.com/Mdazar123/repomind"
-          className="hover:text-white"
+          className="hidden hover:text-white sm:inline"
           target="_blank"
           rel="noreferrer"
         >
           GitHub
+        </a>
+        <a
+          href="https://github.com/Mdazar123/repomind/issues/new"
+          className="hover:text-white"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Feedback
         </a>
       </nav>
     </header>

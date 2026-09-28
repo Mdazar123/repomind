@@ -129,6 +129,14 @@ export default function HomePage() {
             <h3 className="font-heading text-2xl">Built by Md Azhar</h3>
             <p className="mt-2 text-sm leading-relaxed text-[#c9c4b6]">
               Python, LangGraph, and a Next.js case file.{" "}
+              <a className="text-[#e2f36b] underline-offset-4 hover:underline" href="https://github.com/Mdazar123/repomind/issues/new">
+                Report an issue
+              </a>
+              {" · "}
+              <a className="text-[#e2f36b] underline-offset-4 hover:underline" href="https://github.com/Mdazar123/repomind/issues/new?title=Feedback">
+                Feedback
+              </a>
+              {" · "}
               <a className="text-[#e2f36b] underline-offset-4 hover:underline" href="https://github.com/Mdazar123/repomind">
                 GitHub
               </a>

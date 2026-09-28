@@ -269,7 +269,7 @@ Be precise about these when presenting the project.
 - **Focused checks.** It covers the security, async, FastAPI, and reliability patterns listed above. It is not a general bug finder.
 - **Patches for eight patterns.** Other findings are reported, not rewritten.
 - **Proof needs a test.** Without a related test, a patch stays unproven.
-- **Deterministic agents.** The agents make decisions with AST analysis, Ruff, and explicit rules. A local Qwen2.5-Coder model can be downloaded with `repomind model download`, but it is **not yet used in the scan**. Describe RepoMind as an evidence-driven agent workflow, not as an LLM that reads the whole repository.
+- **The model does not decide.** Recon, Security, Performance, Hypothesis, Critic, Fix, and Proof use AST analysis, Ruff, and explicit rules. If Qwen2.5-Coder 1.5B (or 7B) is downloaded locally, it rewrites the case note **after** the critic accepts a cause. It cannot change the finding, the patch, or the proven verdict. Without the model, the factual summary is used.
 - **Proof runs the project’s tests locally.** Only run it on code you trust. The temporary copies are not a security sandbox.
 
 ---

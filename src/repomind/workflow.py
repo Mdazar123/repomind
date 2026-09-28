@@ -429,6 +429,7 @@ def publish(state: InvestigationState) -> dict:
         others.append({**finding, "snippet": _snippet(repo, finding["file"], int(finding["line"]))})
     index = state.get("index") or {}
     summary = _summary(state, status, root)
+    model_note = _case_note(summary, root) if accepted and root else None
     report = {
         "id": _case_id(repo.name, state.get("problem") or ""),
         "product": "RepoMind",
@@ -459,11 +460,31 @@ def publish(state: InvestigationState) -> dict:
             "explanation": edit["explanation"],
         },
         "proof": proof,
+        "model_note": model_note,
     }
-    return {
-        "report": report,
-        "log": [_memo("publish", "Case filed", summary, "proven" if proven else "info")],
-    }
+    log = [_memo("publish", "Case filed", summary, "proven" if proven else "info")]
+    if model_note:
+        log.append(_memo("note", "Case note from the local model", model_note, "info"))
+    return {"report": report, "log": log}
+
+
+def _case_note(summary: str, root: dict) -> str | None:
+    """Rewrite the case note after the critic has accepted a cause. Never changes the finding."""
+    evidence = (
+        f"file={root['file']}:{root['line']}\n"
+        f"title={root['title']}\n"
+        f"line={root.get('evidence') or ''}\n"
+        f"summary={summary}"
+    )
+    try:
+        from repomind.model import rewrite
+
+        note = rewrite(summary, evidence)
+    except Exception:
+        return None
+    if not note:
+        return None
+    return note[:600]
 
 
 def _numbered(root: dict | None, others: list[dict]) -> list[dict]:

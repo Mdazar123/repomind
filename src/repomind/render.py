@@ -75,3 +75,5 @@ def render_report(report: dict) -> None:
             )
         )
     console.print(report.get("summary", ""))
+    if report.get("model_note"):
+        console.print(Panel(report["model_note"], title="Local model note", border_style="cyan"))
