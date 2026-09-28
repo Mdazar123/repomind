@@ -1,6 +1,6 @@
 [project]
 name = "repomind-local"
-version = "0.1.0"
+version = "0.1.1"
 description = "Local repository investigations with specialist agents, a critic, and test-proven patches. Command: repomind"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -12,11 +12,12 @@ dependencies = [
   "typer>=0.12",
   "rich>=13",
   "ruff>=0.9",
+  "pytest>=8",
 ]
 
 [project.optional-dependencies]
 model = ["llama-cpp-python>=0.3", "huggingface-hub>=0.26"]
-dev = ["pytest>=8"]
+dev = []
 
 [project.scripts]
 repomind = "repomind.cli:main"
