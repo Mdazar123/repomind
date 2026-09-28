@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from repomind.cases import LATENCY_CASE, TOKEN_CASE
 from repomind.workflow import bundled_paystream, investigate
 
@@ -33,6 +35,28 @@ def test_scan_lists_both_defects_without_using_the_notes_as_the_question():
     blob = " ".join(titles)
     assert "wrong unit" in blob
     assert "transactions_for" in blob
+
+
+def test_scan_on_a_normal_folder_lists_real_python_defects(tmp_path: Path):
+    source = tmp_path / "app.py"
+    source.write_text(
+        "def login(user):\n"
+        "    try:\n"
+        "        return user.name\n"
+        "    except:\n"
+        "        return missing_name\n",
+        encoding="utf-8",
+    )
+    report = investigate(tmp_path, "", use_notes=False)
+    titles = " ".join(item["title"] for item in report["findings"])
+    places = " ".join(f"{item['file']}:{item['line']}" for item in report["findings"])
+    assert "F821" in titles
+    assert "E722" in titles
+    assert "app.py" in places
+
+    explained = investigate(tmp_path, "Why does login fail?", use_notes=True)
+    hit_names = " ".join(item["name"] for item in explained["index"]["hits"])
+    assert "login" in hit_names
 
 
 def test_fixture_sources_stay_unmodified():

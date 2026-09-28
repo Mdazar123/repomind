@@ -93,4 +93,4 @@ def symptom_conflict(problem: str, category: str) -> str | None:
             "The case leads with a slow activity read. A clock-unit mistake can "
             "reject a token. It does not add a query per account."
         )
-    return f"The case leads with {symptom}, and this theory is about {category}."
+    return None

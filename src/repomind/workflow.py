@@ -15,6 +15,7 @@ from repomind.analysis.detectors import detect
 from repomind.analysis.fixes import propose_edit
 from repomind.analysis.index import index_repo
 from repomind.analysis.proof import prove, select_tests
+from repomind.analysis.search import retrieve
 from repomind.analysis.symptoms import choose_hypothesis, primary_symptom, symptom_conflict
 
 
@@ -73,7 +74,7 @@ def _ruff_findings(repo: Path) -> list[dict]:
                 "check",
                 str(repo),
                 "--select",
-                "S105,S106,S107,S110,S112,S602,ASYNC,B006",
+                "F821,F822,F823,E722,BLE,B006,B007,S102,S105,S106,S107,S110,S112,S602,S603,S608,ASYNC",
                 "--exclude",
                 "tests",
                 "--output-format",
@@ -98,6 +99,8 @@ def _ruff_findings(repo: Path) -> list[dict]:
         code = item.get("code") or ""
         if code.startswith("ASYNC"):
             category = "latency"
+        elif code in {"F821", "F822", "F823", "E722"} or code.startswith("BLE"):
+            category = "defect"
         else:
             category = "security"
         file = Path(item["filename"])
@@ -111,7 +114,7 @@ def _ruff_findings(repo: Path) -> list[dict]:
                 "id": f"ruff:{code}:{rel}:{line}",
                 "detector": "ruff",
                 "category": category,
-                "confidence": 0.62,
+                "confidence": _ruff_confidence(code),
                 "severity": "medium",
                 "file": rel,
                 "line": line,
@@ -123,6 +126,16 @@ def _ruff_findings(repo: Path) -> list[dict]:
             }
         )
     return findings
+
+
+def _ruff_confidence(code: str) -> float:
+    if code in {"F821", "F822", "F823"}:
+        return 0.78
+    if code in {"E722", "S602", "S608"} or code.startswith("BLE"):
+        return 0.7
+    if code.startswith("ASYNC"):
+        return 0.66
+    return 0.55
 
 
 def _dedupe(findings: list[dict]) -> list[dict]:
@@ -143,6 +156,8 @@ def recon(state: InvestigationState) -> dict:
     repo = Path(state["repo"])
     index = index_repo(repo)
     catalog = _dedupe(detect(repo) + _ruff_findings(repo))
+    catalog.sort(key=lambda item: item["confidence"], reverse=True)
+    catalog = catalog[:30]
     routes = index.get("routes") or []
     route_text = ", ".join(f"{item['verb']} {item['path']}" for item in routes[:6]) or "none marked"
     body = (
@@ -152,20 +167,27 @@ def recon(state: InvestigationState) -> dict:
     )
     if index.get("notes"):
         body += " On-call notes are in the workspace and will be treated as a lead, not as proof."
+    memos = [_memo("recon", "Repository indexed", body, "evidence")]
+    hits = retrieve(repo, state.get("problem") or "")
+    if hits:
+        index["hits"] = hits
+        listed = "\n".join(f"{item['file']}:{item['line']} {item['name']}" for item in hits)
+        memos.append(_memo("recon", "Read the functions that match the question", listed, "evidence"))
     return {
         "index": index,
         "catalog": catalog,
-        "log": [_memo("recon", "Repository indexed", body, "evidence")],
+        "log": memos,
     }
 
 
 def security_agent(state: InvestigationState) -> dict:
-    mine = [item for item in state["catalog"] if item["category"] in {"auth", "security"}]
+    mine = [item for item in state["catalog"] if item["category"] != "latency"]
     if not mine:
         body = "No authentication or secret-handling defect was filed from the files I read."
     else:
-        lines = [f"{item['file']}:{item['line']} — {item['title']}" for item in mine]
-        body = "Filed from the handlers and auth helpers:\n" + "\n".join(lines)
+        lines = [f"{item['file']}:{item['line']} — {item['title']}" for item in mine[:8]]
+        extra = f"\n+ {len(mine) - 8} more" if len(mine) > 8 else ""
+        body = "Filed from the code:\n" + "\n".join(lines) + extra
     return {"findings": mine, "log": [_memo("security", "Security pass", body, "evidence")]}
 
 
@@ -410,11 +432,13 @@ def publish(state: InvestigationState) -> dict:
             "tests": [
                 {"name": item["name"], "file": item["file"]} for item in (index.get("tests") or [])
             ],
+            "hits": index.get("hits") or [],
         },
         "log": state.get("log") or [],
         "critiques": critiques,
         "root_cause": root,
         "also_found": others,
+        "findings": _numbered(root, others),
         "patch": None
         if not edit
         else {
@@ -428,6 +452,16 @@ def publish(state: InvestigationState) -> dict:
         "report": report,
         "log": [_memo("publish", "Case filed", summary, "proven" if proven else "info")],
     }
+
+
+def _numbered(root: dict | None, others: list[dict]) -> list[dict]:
+    ordered = []
+    if root:
+        ordered.append(root)
+    ordered.extend(others)
+    for number, finding in enumerate(ordered, start=1):
+        finding["number"] = number
+    return ordered
 
 
 def _summary(state: InvestigationState, status: str, root: dict | None) -> str:

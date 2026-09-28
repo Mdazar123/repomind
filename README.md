@@ -34,6 +34,17 @@ repomind fix 1
 
 `fix` prints the diff and asks before it writes. Pass `--yes` to apply it in a script.
 
+## Check a project of your own
+
+```bash
+cd C:\path\to\your-python-project
+repomind scan .
+repomind explain "Why does login fail?" .
+repomind fix 1
+```
+
+`scan` lists Python problems it can point at: undefined names, bare `except`, unsafe shell calls, hardcoded secrets, awaited calls inside loops, and the token-clock and unused-batch patterns. `explain` reads the functions that match your question, then keeps only a cause that fits that question. A patch is marked proven only when a related test fails before the edit and passes after it.
+
 ## What `repomind demo` shows
 
 Paystream is a small ledger with two real defects and tests that fail:

@@ -29,6 +29,20 @@ def render_report(report: dict) -> None:
             continue
         table.add_row(memo.get("agent", ""), f"{memo.get('title', '')}\n{memo.get('body', '')}")
     console.print(table)
+    findings = report.get("findings") or []
+    if findings:
+        found = Table(title="Findings", expand=True)
+        found.add_column("#", width=4)
+        found.add_column("Where")
+        found.add_column("What")
+        for finding in findings:
+            found.add_row(
+                str(finding.get("number", "")),
+                f"{finding['file']}:{finding['line']}",
+                finding["title"],
+            )
+        console.print(found)
+        console.print("Next: repomind fix 1    shows the first patch and asks before writing.")
     root = report.get("root_cause")
     if root:
         console.print(
