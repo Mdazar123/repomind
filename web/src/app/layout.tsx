@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Fraunces, IBM_Plex_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
     "Specialist agents read a Python repository on your machine, a critic rejects the theory that does not explain the symptom, and a patch counts only after the tests go from failing to passing.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
