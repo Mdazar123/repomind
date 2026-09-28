@@ -1,0 +1,41 @@
+[project]
+name = "repomind-local"
+version = "0.1.0"
+description = "Local repository investigations with specialist agents, a critic, and test-proven patches. Command: repomind"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Md Azhar" }]
+keywords = ["agents", "langgraph", "static-analysis", "cli"]
+dependencies = [
+  "langgraph>=0.4",
+  "typer>=0.12",
+  "rich>=13",
+  "ruff>=0.9",
+]
+
+[project.optional-dependencies]
+model = ["llama-cpp-python>=0.3", "huggingface-hub>=0.26"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+repomind = "repomind.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Mdazar123"
+Repository = "https://github.com/Mdazar123/repomind"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+repomind = ["fixtures/**/*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"

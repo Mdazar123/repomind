@@ -1,0 +1,190 @@
+{
+  "id": "RM-EB8C",
+  "product": "RepoMind",
+  "repo_name": "paystream",
+  "problem": "Freshly issued session tokens are rejected with 401. On-call notes also mention latency \u2014 confirm which fault actually explains the rejections.",
+  "status": "proven",
+  "summary": "The critic rejected an earlier theory that did not explain the symptom. Token expiry is compared in the wrong unit in paystream/auth/tokens.py:19. tests/test_tokens.py failed before the edit and passed after it.",
+  "index": {
+    "file_count": 11,
+    "python_files": 8,
+    "lines": 123,
+    "routes": [
+      {
+        "verb": "POST",
+        "path": "/tokens",
+        "function": "post_tokens",
+        "file": "paystream/routes.py",
+        "line": 10
+      },
+      {
+        "verb": "GET",
+        "path": "/sessions/validate",
+        "function": "get_session",
+        "file": "paystream/routes.py",
+        "line": 15
+      },
+      {
+        "verb": "GET",
+        "path": "/users/{user_id}/activity",
+        "function": "get_activity",
+        "file": "paystream/routes.py",
+        "line": 22
+      }
+    ],
+    "tests": [
+      {
+        "name": "test_activity_uses_one_ledger_read",
+        "file": "tests/test_activity.py"
+      },
+      {
+        "name": "test_fresh_token_is_active",
+        "file": "tests/test_tokens.py"
+      },
+      {
+        "name": "test_expired_token_is_inactive",
+        "file": "tests/test_tokens.py"
+      }
+    ]
+  },
+  "log": [
+    {
+      "agent": "recon",
+      "title": "Repository indexed",
+      "body": "Indexed 11 files, 14 functions, 3 tests. Routes: POST /tokens, GET /sessions/validate, GET /users/{user_id}/activity. On-call notes are in the workspace and will be treated as a lead, not as proof.",
+      "tone": "evidence"
+    },
+    {
+      "agent": "performance",
+      "title": "Performance pass",
+      "body": "Filed from the data path:\npaystream/activity.py:9 \u2014 Loop calls `transactions_for` even though `transactions_for_accounts` exists",
+      "tone": "evidence"
+    },
+    {
+      "agent": "security",
+      "title": "Security pass",
+      "body": "Filed from the handlers and auth helpers:\npaystream/auth/tokens.py:19 \u2014 Token expiry is compared in the wrong unit",
+      "tone": "evidence"
+    },
+    {
+      "agent": "hypothesis",
+      "title": "Leading with the on-call note",
+      "body": "The notes mention a latency lead before the 401s, so this pass starts there. Loop calls `transactions_for` even though `transactions_for_accounts` exists (paystream/activity.py:9).",
+      "tone": "info"
+    },
+    {
+      "agent": "critic",
+      "title": "Theory rejected",
+      "body": "The case leads with rejected tokens. A sequential ledger read can make a request slow. It cannot make a freshly issued token look expired.",
+      "tone": "challenge"
+    },
+    {
+      "agent": "hypothesis",
+      "title": "Theory selected from the case statement",
+      "body": "Token expiry is compared in the wrong unit (paystream/auth/tokens.py:19). `token_is_active` compares `token[\"exp\"]` with `now_s * 1000`. The clock is scaled by 1000, so a unix-second `exp` is always behind `now_s * 1000`.",
+      "tone": "info"
+    },
+    {
+      "agent": "critic",
+      "title": "Theory stands",
+      "body": "Re-read paystream/auth/tokens.py:19. The line is `return token[\"exp\"] > now_s * 1000`. It matches the reported auth symptom. I am not using \u201cLoop calls `transactions_for` even though `transactions_for_accounts` exists\u201d as the cause.",
+      "tone": "proven"
+    },
+    {
+      "agent": "fix",
+      "title": "Edit prepared for paystream/auth/tokens.py",
+      "body": "Compare the expiry in the same unit the token was issued in. Remove the \u00d71000 on the clock.",
+      "tone": "evidence"
+    },
+    {
+      "agent": "proof",
+      "title": "Tests flipped from failing to passing",
+      "body": "tests/test_tokens.py failed before the edit and passed after it. The workspace itself was not modified.",
+      "tone": "proven"
+    },
+    {
+      "agent": "publish",
+      "title": "Case filed",
+      "body": "The critic rejected an earlier theory that did not explain the symptom. Token expiry is compared in the wrong unit in paystream/auth/tokens.py:19. tests/test_tokens.py failed before the edit and passed after it.",
+      "tone": "proven"
+    }
+  ],
+  "critiques": [
+    {
+      "accepted": false,
+      "title": "Theory rejected",
+      "body": "The case leads with rejected tokens. A sequential ledger read can make a request slow. It cannot make a freshly issued token look expired.",
+      "finding_id": "unused_batch_call:paystream/activity.py:9"
+    },
+    {
+      "accepted": true,
+      "title": "Theory stands",
+      "body": "Re-read paystream/auth/tokens.py:19. The line is `return token[\"exp\"] > now_s * 1000`. It matches the reported auth symptom. I am not using \u201cLoop calls `transactions_for` even though `transactions_for_accounts` exists\u201d as the cause.",
+      "finding_id": "expiry_unit_mismatch:paystream/auth/tokens.py:19"
+    }
+  ],
+  "root_cause": {
+    "id": "expiry_unit_mismatch:paystream/auth/tokens.py:19",
+    "detector": "expiry_unit_mismatch",
+    "category": "auth",
+    "confidence": 0.9,
+    "severity": "high",
+    "file": "paystream/auth/tokens.py",
+    "line": 19,
+    "title": "Token expiry is compared in the wrong unit",
+    "detail": "`token_is_active` compares `token[\"exp\"]` with `now_s * 1000`. The clock is scaled by 1000, so a unix-second `exp` is always behind `now_s * 1000`.",
+    "evidence": "return token[\"exp\"] > now_s * 1000",
+    "function": "token_is_active",
+    "extra": {
+      "scaled": "now_s * 1000"
+    },
+    "snippet": "    17  def token_is_active(token: dict, now: float | None = None) -> bool:\n    18      now_s = now if now is not None else time.time()\n>   19      return token[\"exp\"] > now_s * 1000"
+  },
+  "also_found": [
+    {
+      "id": "unused_batch_call:paystream/activity.py:9",
+      "detector": "unused_batch_call",
+      "category": "latency",
+      "confidence": 0.88,
+      "severity": "high",
+      "file": "paystream/activity.py",
+      "line": 9,
+      "title": "Loop calls `transactions_for` even though `transactions_for_accounts` exists",
+      "detail": "`load_user_activity` awaits `ledger.transactions_for` once per item. `transactions_for_accounts` is already defined and performs the same read in one call.",
+      "evidence": "for account in accounts:",
+      "function": "load_user_activity",
+      "extra": {
+        "method": "transactions_for",
+        "batch": "transactions_for_accounts"
+      },
+      "snippet": "     7      accounts = await ledger.accounts_for(user_id)\n     8      rows: list[dict] = []\n>    9      for account in accounts:\n    10          rows.extend(await ledger.transactions_for(account[\"id\"]))\n    11      return rows"
+    }
+  ],
+  "patch": {
+    "path": "paystream/auth/tokens.py",
+    "diff": "--- a/paystream/auth/tokens.py\n+++ b/paystream/auth/tokens.py\n@@ -16,4 +16,4 @@\n \n def token_is_active(token: dict, now: float | None = None) -> bool:\n     now_s = now if now is not None else time.time()\n-    return token[\"exp\"] > now_s * 1000\n+    return token[\"exp\"] > now_s\n",
+    "explanation": "Compare the expiry in the same unit the token was issued in. Remove the \u00d71000 on the clock."
+  },
+  "proof": {
+    "tests": [
+      "tests/test_tokens.py"
+    ],
+    "baseline": {
+      "passed": false,
+      "returncode": 1,
+      "output": "F.                                                                       [100%]\n=================================== FAILURES ===================================\n__________________________ test_fresh_token_is_active __________________________\ntests/test_tokens.py:7: in test_fresh_token_is_active\n    assert token_is_active(token, now=now + 10)\nE   AssertionError: assert False\nE    +  where False = token_is_active({'sub': 'ada', 'iat': 1700000000, 'exp': 1700003600}, now=(1700000000.0 + 10))\n=========================== short test summary info ============================\nFAILED tests/test_tokens.py::test_fresh_token_is_active - AssertionError: ass...\n1 failed, 1 passed in 0.02s",
+      "tests": [
+        "tests/test_tokens.py"
+      ]
+    },
+    "patched": {
+      "passed": true,
+      "returncode": 0,
+      "output": "..                                                                       [100%]\n2 passed in 0.00s",
+      "tests": [
+        "tests/test_tokens.py"
+      ]
+    },
+    "proven": true
+  }
+}
