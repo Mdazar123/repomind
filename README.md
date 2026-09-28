@@ -43,7 +43,15 @@ repomind explain "Why does login fail?" .
 repomind fix 1
 ```
 
-`scan` lists Python problems it can point at: undefined names, bare `except`, unsafe shell calls, hardcoded secrets, awaited calls inside loops, and the token-clock and unused-batch patterns. `explain` reads the functions that match your question, then keeps only a cause that fits that question. A patch is marked proven only when a related test fails before the edit and passes after it.
+`scan` checks a Python folder for this set:
+
+- hardcoded secrets, `shell=True`, and SQL built with string interpolation
+- JWT checks that disable signature verification, and expiry compared in the wrong unit
+- blocking calls inside `async` functions, awaits inside loops, queries inside loops, and HTTP calls with no timeout
+- FastAPI routes with no `response_model`, blocking work in an async route, and `Depends` used incorrectly
+- undefined names, bare or swallowed exceptions, external calls with no retry, and opened files or sessions that are never closed
+
+It prepares a patch only for the patterns it can change without guessing: the clock unit, a batch call, `asyncio.gather`, `timeout=10`, `asyncio.sleep`, `Depends(fn)` instead of `Depends(fn())`, a bare `except`, and turning JWT verification back on. A patch is marked proven only when a related test fails before the edit and passes after it. The other checks are reported with a file and a line, and left for you to change.
 
 ## What `repomind demo` shows
 

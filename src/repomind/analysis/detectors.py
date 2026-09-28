@@ -94,6 +94,8 @@ def _is_times_thousand(node: ast.AST) -> ast.AST | None:
 
 
 def detect(repo: Path) -> list[dict]:
+    from repomind.analysis.checks import extra_checks
+
     names = _collect_names(repo)
     findings: list[dict] = []
     for path in iter_files(repo):
@@ -107,6 +109,7 @@ def detect(repo: Path) -> list[dict]:
             continue
         findings.extend(_expiry_findings(tree, source, rel))
         findings.extend(_loop_findings(tree, source, rel, names))
+        findings.extend(extra_checks(tree, source, rel))
     return findings
 
 

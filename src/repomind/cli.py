@@ -106,10 +106,10 @@ def fix(
     if not report_path.exists():
         raise typer.BadParameter("Run repomind scan or repomind explain in this repository first.")
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    candidates = []
-    if report.get("root_cause"):
+    candidates = list(report.get("findings") or [])
+    if not candidates and report.get("root_cause"):
         candidates.append(report["root_cause"])
-    candidates.extend(report.get("also_found") or [])
+        candidates.extend(report.get("also_found") or [])
     if number > len(candidates):
         raise typer.BadParameter(f"This case has {len(candidates)} findings.")
     finding = candidates[number - 1]
@@ -128,7 +128,7 @@ def fix(
         console.print("Left the file unchanged.")
         raise typer.Exit()
     target.write_text(edit["after"], encoding="utf-8")
-    tests = select_tests(path, finding["category"], finding["file"])
+    tests = select_tests(path, finding["category"], finding["file"], finding.get("function"))
     if tests:
         result = run_pytest(path, tests)
         status = "passed" if result["passed"] else "failed"

@@ -325,7 +325,7 @@ def fix(state: InvestigationState) -> dict:
                 _memo(
                     "fix",
                     "No automatic edit",
-                    "The finding is real, but this build only rewrites clock-unit checks, unused batch calls, and single awaits inside loops.",
+                    "The finding is real. RepoMind only rewrites patterns it can change without guessing: clock units, batch calls, async gathers, timeouts, time.sleep, Depends(), bare except, and disabled JWT checks.",
                     "info",
                 )
             ],
@@ -345,7 +345,12 @@ def route_fix(state: InvestigationState) -> str:
 def prove_node(state: InvestigationState) -> dict:
     repo = Path(state["repo"])
     hypothesis = state["hypothesis"]
-    tests = select_tests(repo, hypothesis["category"], hypothesis["file"])
+    tests = select_tests(
+        repo,
+        hypothesis["category"],
+        hypothesis["file"],
+        hypothesis.get("function"),
+    )
     if not tests:
         return {
             "proof": {

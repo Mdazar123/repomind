@@ -68,6 +68,21 @@ def propose_edit(repo: Path, finding: dict) -> dict | None:
     elif finding["detector"] == "await_in_loop":
         after = _fix_gather(before)
         explanation = "Run the awaited calls concurrently with asyncio.gather."
+    elif finding["detector"] == "missing_timeout":
+        after = _fix_timeout(before, int(finding["line"]))
+        explanation = "Stop the call from waiting forever. Set timeout=10."
+    elif finding["detector"] in {"blocking_in_async", "fastapi_blocking_route"}:
+        after = _fix_blocking_sleep(before, int(finding["line"]))
+        explanation = "Replace time.sleep in the async function with asyncio.sleep so the event loop can run other work."
+    elif finding["detector"] == "called_dependency":
+        after = _fix_called_dependency(before, int(finding["line"]))
+        explanation = "Pass the dependency callable to Depends. Do not call it first."
+    elif finding["detector"] == "swallowed_except" and finding.get("extra", {}).get("bare"):
+        after = _fix_bare_except(before, int(finding["line"]))
+        explanation = "Name the failure as Exception so a bare except does not hide BaseException."
+    elif finding["detector"] == "weak_jwt":
+        after = _fix_jwt_verify(before, int(finding["line"]))
+        explanation = "Turn signature verification back on."
     else:
         return None
     if not after or after == before:
@@ -165,6 +180,94 @@ def _fix_gather(source: str) -> str | None:
         replacement = f"await asyncio.gather(*({call_src} for {target} in {iterable}))"
         updated = _replace(source, node, replacement)
         return _ensure_asyncio(updated)
+    return None
+
+
+def _fix_timeout(source: str, line: int) -> str | None:
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or node.lineno != line:
+            continue
+        if any(keyword.arg == "timeout" for keyword in node.keywords):
+            continue
+        segment = ast.get_source_segment(source, node)
+        if not segment or not segment.endswith(")"):
+            continue
+        return _replace(source, node, segment[:-1] + ", timeout=10)")
+    return None
+
+
+def _fix_blocking_sleep(source: str, line: int) -> str | None:
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or node.lineno != line:
+            continue
+        name = ""
+        if isinstance(node.func, ast.Attribute):
+            name = f"{getattr(node.func.value, 'id', '')}.{node.func.attr}"
+        if name != "time.sleep":
+            continue
+        updated = _replace(source, node.func, "asyncio.sleep")
+        return _ensure_asyncio(updated)
+    return None
+
+
+def _fix_called_dependency(source: str, line: int) -> str | None:
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or node.lineno != line or not node.args:
+            continue
+        func = node.func
+        called = func.attr if isinstance(func, ast.Attribute) else getattr(func, "id", "")
+        if called != "Depends" or not isinstance(node.args[0], ast.Call):
+            continue
+        inner = node.args[0]
+        if inner.args or inner.keywords:
+            continue
+        name = ast.get_source_segment(source, inner.func)
+        if not name:
+            continue
+        return _replace(source, inner, name)
+    return None
+
+
+def _fix_bare_except(source: str, line: int) -> str | None:
+    lines = source.splitlines(keepends=True)
+    if line < 1 or line > len(lines) or "except:" not in lines[line - 1]:
+        return None
+    lines[line - 1] = lines[line - 1].replace("except:", "except Exception:", 1)
+    return "".join(lines)
+
+
+def _fix_jwt_verify(source: str, line: int) -> str | None:
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or node.lineno != line:
+            continue
+        for keyword in node.keywords:
+            if keyword.arg == "verify" and isinstance(keyword.value, ast.Constant) and keyword.value.value is False:
+                return _replace(source, keyword.value, "True")
+            if keyword.arg == "options" and isinstance(keyword.value, ast.Dict):
+                for key, value in zip(keyword.value.keys, keyword.value.values):
+                    if (
+                        isinstance(key, ast.Constant)
+                        and key.value == "verify_signature"
+                        and isinstance(value, ast.Constant)
+                        and value.value is False
+                    ):
+                        return _replace(source, value, "True")
     return None
 
 

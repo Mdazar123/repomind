@@ -10,25 +10,39 @@ import tempfile
 from pathlib import Path
 
 
-TARGETS = {
-    "auth": ["tests/test_tokens.py"],
-    "latency": ["tests/test_activity.py"],
-}
-
-
-def select_tests(repo: Path, category: str, finding_file: str) -> list[str]:
-    preferred = [item for item in TARGETS.get(category, []) if (repo / item).exists()]
-    if preferred:
-        return preferred
+def select_tests(repo: Path, category: str, finding_file: str, function: str | None = None) -> list[str]:
+    del category
     stem = Path(finding_file).stem
-    matches: list[str] = []
     tests_dir = repo / "tests"
     if not tests_dir.exists():
         return []
+    named: list[str] = []
+    files: list[str] = []
     for path in sorted(tests_dir.glob("test_*.py")):
         text = path.read_text(encoding="utf-8", errors="replace")
+        relative = path.relative_to(repo).as_posix()
+        if function and function in text:
+            named.extend(_tests_mentioning(text, relative, function))
         if stem and stem in text:
-            matches.append(path.relative_to(repo).as_posix())
+            files.append(relative)
+    if named:
+        return named[:4]
+    return files[:2]
+
+
+def _tests_mentioning(text: str, relative: str, function: str) -> list[str]:
+    import ast
+
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return []
+    matches: list[str] = []
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name.startswith("test_"):
+            segment = ast.get_source_segment(text, node) or ""
+            if function in segment:
+                matches.append(f"{relative}::{node.name}")
     return matches
 
 

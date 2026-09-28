@@ -51,7 +51,7 @@ def test_scan_on_a_normal_folder_lists_real_python_defects(tmp_path: Path):
     titles = " ".join(item["title"] for item in report["findings"])
     places = " ".join(f"{item['file']}:{item['line']}" for item in report["findings"])
     assert "F821" in titles
-    assert "E722" in titles
+    assert "Bare except" in titles or "E722" in titles
     assert "app.py" in places
 
     explained = investigate(tmp_path, "Why does login fail?", use_notes=True)
