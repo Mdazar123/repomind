@@ -119,6 +119,8 @@ def fix(
         raise typer.Exit(code=1)
     console.print(edit["diff"])
     console.print(edit["explanation"])
+    if "fixtures/" in finding["file"].replace("\\", "/"):
+        console.print("This file is the bundled demo. Applying the patch removes the bug used by repomind demo.")
     target = path / edit["path"]
     current = target.read_text(encoding="utf-8")
     if current != edit["before"]:

@@ -74,7 +74,7 @@ def _ruff_findings(repo: Path) -> list[dict]:
                 "check",
                 str(repo),
                 "--select",
-                "F821,F822,F823,E722,BLE,B006,B007,S102,S105,S106,S107,S110,S112,S602,S603,S608,ASYNC",
+                "F821,F822,F823,E722,B006,B007,S102,S106,S107,S110,S112,S602,S608,ASYNC",
                 "--exclude",
                 "tests",
                 "--output-format",

@@ -13,21 +13,37 @@ from pathlib import Path
 def select_tests(repo: Path, category: str, finding_file: str, function: str | None = None) -> list[str]:
     del category
     stem = Path(finding_file).stem
-    tests_dir = repo / "tests"
-    if not tests_dir.exists():
-        return []
-    named: list[str] = []
-    files: list[str] = []
-    for path in sorted(tests_dir.glob("test_*.py")):
-        text = path.read_text(encoding="utf-8", errors="replace")
-        relative = path.relative_to(repo).as_posix()
-        if function and function in text:
-            named.extend(_tests_mentioning(text, relative, function))
-        if stem and stem in text:
-            files.append(relative)
-    if named:
-        return named[:4]
-    return files[:2]
+    for tests_dir in _nearest_test_dirs(repo, finding_file):
+        named: list[str] = []
+        files: list[str] = []
+        for path in sorted(tests_dir.glob("test_*.py")):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            relative = path.relative_to(repo).as_posix()
+            if function and function in text:
+                named.extend(_tests_mentioning(text, relative, function))
+            if stem and stem in text:
+                files.append(relative)
+        if named:
+            return named[:4]
+        if files:
+            return files[:2]
+    return []
+
+
+def _nearest_test_dirs(repo: Path, finding_file: str) -> list[Path]:
+    current = (repo / finding_file).parent
+    found: list[Path] = []
+    while True:
+        candidate = current / "tests"
+        if candidate.is_dir():
+            found.append(candidate)
+        if current == repo:
+            break
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+    return found
 
 
 def _tests_mentioning(text: str, relative: str, function: str) -> list[str]:
@@ -55,6 +71,31 @@ def _copy(repo: Path) -> Path:
         ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".git", ".pytest_cache"),
     )
     return destination
+
+
+def _plan(repo: Path, tests: list[str]) -> tuple[Path, list[str]]:
+    """Run pytest from the nearest project root so a nested sample keeps its own imports."""
+    if not tests:
+        return repo, tests
+    first = tests[0].split("::", 1)[0]
+    current = (repo / first).parent
+    root = repo
+    while True:
+        if (current / "pytest.ini").exists() or (current / "pyproject.toml").exists():
+            root = current
+            break
+        if current == repo:
+            break
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+    moved: list[str] = []
+    for item in tests:
+        file, separator, node = item.partition("::")
+        short = Path(file).relative_to(root.relative_to(repo)).as_posix()
+        moved.append(f"{short}::{node}" if separator else short)
+    return root, moved
 
 
 def run_pytest(repo: Path, tests: list[str], timeout: int = 40) -> dict:
@@ -98,10 +139,10 @@ def prove(repo: Path, edit: dict, tests: list[str]) -> dict:
     baseline_dir = _copy(repo)
     patched_dir = _copy(repo)
     try:
-        baseline = run_pytest(baseline_dir, tests)
+        baseline = run_pytest(*_plan(baseline_dir, tests))
         target = patched_dir / edit["path"]
         target.write_text(edit["after"], encoding="utf-8")
-        patched = run_pytest(patched_dir, tests)
+        patched = run_pytest(*_plan(patched_dir, tests))
     finally:
         shutil.rmtree(baseline_dir, ignore_errors=True)
         shutil.rmtree(patched_dir, ignore_errors=True)

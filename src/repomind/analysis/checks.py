@@ -22,7 +22,7 @@ _BLOCKING = {
     "subprocess.check_call",
     "subprocess.check_output",
 }
-_QUERY = {"execute", "executemany", "executescript", "query", "filter", "find", "find_one"}
+_QUERY = {"execute", "executemany", "executescript", "query", "find_one"}
 _SECRET_NAMES = {"password", "passwd", "secret", "api_key", "apikey", "access_token", "private_key"}
 
 

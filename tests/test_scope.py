@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from repomind.analysis.detectors import detect
+from repomind.analysis.proof import select_tests
 from repomind.workflow import investigate
 
 
@@ -68,6 +69,24 @@ def test_detectors_cover_the_focused_backend_checks(tmp_path: Path):
         "missing_retry",
         "query_in_loop",
     } <= found
+
+
+def test_string_find_is_not_a_database_loop(tmp_path: Path):
+    _write(tmp_path, "search.py", "def locate(text, words):\n    for word in words:\n        text.find(word)\n")
+    assert "query_in_loop" not in {item["detector"] for item in detect(tmp_path)}
+
+
+def test_demo_bug_is_proved_by_its_own_tests():
+    repo = Path(__file__).resolve().parents[1]
+    chosen = select_tests(
+        repo,
+        "auth",
+        "src/repomind/fixtures/paystream/paystream/auth/tokens.py",
+        "token_is_active",
+    )
+    assert chosen
+    assert all("fixtures/paystream/tests/" in item for item in chosen)
+    assert all("test_investigation" not in item for item in chosen)
 
 
 def test_timeout_patch_is_proven(tmp_path: Path):

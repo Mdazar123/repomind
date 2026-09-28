@@ -43,6 +43,11 @@ def render_report(report: dict) -> None:
             )
         console.print(found)
         console.print("Next: repomind fix 1    shows the first patch and asks before writing.")
+        if "fixtures/" in str((report.get("root_cause") or {}).get("file", "")):
+            console.print(
+                "The first finding is in the bundled Paystream demo. "
+                "Use repomind demo to see that case. fix 1 would edit the demo bug."
+            )
     root = report.get("root_cause")
     if root:
         console.print(
